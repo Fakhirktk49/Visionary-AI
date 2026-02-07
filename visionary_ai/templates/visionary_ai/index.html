@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Reality Filter</title>
+<style>
+  /* Reset and basics */
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+  body { background-color: #111827; color: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+
+  nav {
+    background-color: #1f2937;
+    padding: 15px 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  }
+  nav .logo { font-size: 24px; font-weight: bold; color: #3b82f6; }
+  nav ul { list-style: none; display: flex; gap: 30px; }
+  nav ul li a { color: #d1d5db; text-decoration: none; font-weight: 500; }
+  nav ul li a:hover { color: #ffffff; text-decoration: underline; }
+  .nav-toggle { display: none; font-size: 28px; color: #d1d5db; cursor: pointer; }
+
+  @media (max-width: 768px) {
+    nav ul { display: none; flex-direction: column; background-color: #1f2937; position: absolute; top: 60px; right: 0; width: 200px; border-radius: 10px; overflow: hidden; }
+    nav ul li { padding: 15px; text-align: center; }
+    nav ul li a { display: block; }
+    .nav-toggle { display: block; }
+    nav ul.show { display: flex; }
+  }
+
+  /* Hero */
+  section#home { text-align: center; padding: 120px 20px 60px 20px; }
+  section#home h1 { font-size: 3.5rem; margin-bottom: 20px; color: #3b82f6; }
+  section#home p { max-width: 700px; margin: 0 auto 30px auto; font-size: 1.2rem; color: #d1d5db; }
+  .hero-btn { background-color: #3b82f6; padding: 12px 30px; border-radius: 10px; font-weight: bold; color: #fff; text-decoration: none; display: inline-block; transition: all 0.3s ease; }
+  .hero-btn:hover { transform: scale(1.05); background-color: #2563eb; }
+
+  /* Features */
+  section#features { background-color: #1f2937; padding: 80px 20px; text-align: center; }
+  section#features h2 { font-size: 2.5rem; margin-bottom: 40px; }
+  .features-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; max-width: 1200px; margin: 0 auto; }
+  .feature-card { background-color: #374151; padding: 30px 20px; border-radius: 20px; width: 280px; transition: all 0.3s ease; box-shadow: 0 8px 15px rgba(0,0,0,0.5); }
+  .feature-card:hover { transform: translateY(-10px); }
+  .feature-card i { font-size: 40px; margin-bottom: 20px; color: #3b82f6; }
+  .feature-card h3 { font-size: 1.5rem; margin-bottom: 10px; }
+  .feature-card p { font-size: 1rem; color: #d1d5db; }
+
+  /* Demo */
+  section#demo { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 20px; padding: 80px 20px; text-align: center; }
+  section#demo h2 { font-size: 2.5rem; margin-bottom: 40px; }
+
+  .camera-container {
+    position: relative;
+    width: 80%;
+    max-width: 800px;
+    height: 60vh;
+    border-radius: 20px;
+    overflow: hidden;
+    background-color: black;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.7);
+  }
+  #camera { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+  #overlay {
+    position: absolute;
+    top:0; left:0; width:100%; height:100%;
+    display:flex; justify-content:center; align-items:center;
+    color:white; font-weight:bold; text-shadow:0 0 8px black;
+    pointer-events:none; text-align:center; font-size:1.5em;
+    background: rgba(0,0,0,0.2);
+  }
+  #frameCanvas { display:none; }
+
+  .mode-buttons { margin-top:20px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap; }
+  .mode-btn { background-color: #374151; padding:12px 25px; border-radius:10px; font-weight:bold; border:none; color:#fff; cursor:pointer; transition:0.3s; }
+  .mode-btn.active { background-color:#3b82f6; }
+  .mode-btn:hover { transform:scale(1.05); opacity:0.9; }
+
+  #infoPanel{
+    width:80%; max-width:800px;
+    padding:20px; border-radius:20px; background: rgba(55,65,81,0.8);
+    backdrop-filter: blur(10px);
+    box-shadow:0 8px 15px rgba(0,0,0,0.5);
+    display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
+    gap:10px;
+  }
+  #nextPrompt { display:none; flex-direction:column; gap:10px; }
+  #nextPrompt button { padding:8px 20px; border:none; border-radius:10px; cursor:pointer; background:#3b82f6; color:white; transition:0.2s; }
+  #nextPrompt button:hover { background:#2563eb; }
+
+  /* Footer */
+  footer { background-color: #1f2937; text-align: center; padding: 20px; margin-top: auto; box-shadow: 0 -4px 6px rgba(0,0,0,0.3); }
+  footer p { margin-bottom: 10px; }
+  footer a { margin: 0 10px; color: #d1d5db; text-decoration: none; font-size: 1.2rem; transition: all 0.3s ease; }
+  footer a:hover { color: #fff; }
+
+  @media(max-width:768px){
+    nav { padding: 15px 20px; }
+    section#home h1 { font-size:2.5rem; }
+    section#features h2, section#demo h2 { font-size:2rem; }
+    .feature-card { width: 90%; }
+  }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav>
+  <div class="logo">AI Reality Filter</div>
+  <div class="nav-toggle" id="navToggle">&#9776;</div>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section id="home">
+  <h1>Augment Your Reality with AI</h1>
+  <p>Point your camera at any scene and see history, future predictions, and mood-driven overlays in real time using Gemini API intelligence.</p>
+  <a href="#demo" class="hero-btn">Try Demo</a>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <h2>Features</h2>
+  <div class="features-container">
+    <div class="feature-card">
+      <i class="fas fa-landmark"></i>
+      <h3>Historical Mode</h3>
+      <p>See past events and historical facts about any object or place around you.</p>
+    </div>
+    <div class="feature-card">
+      <i class="fas fa-rocket"></i>
+      <h3>Future Predictions</h3>
+      <p>AI predicts how locations, nature, or objects may change over time.</p>
+    </div>
+    <div class="feature-card">
+      <i class="fas fa-smile-beam"></i>
+      <h3>Mood Mode</h3>
+      <p>Analyze the scene’s vibe and generate mood-driven artistic overlays, music, or text.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Demo -->
+<section id="demo">
+  <h2>Live Demo</h2>
+  <div class="camera-container">
+    <video id="camera" autoplay playsinline></video>
+    <div id="overlay">Allow camera access...</div>
+    <canvas id="frameCanvas"></canvas>
+  </div>
+
+  <div class="mode-buttons">
+    <button class="mode-btn active" id="historyBtn">History Mode</button>
+    <button class="mode-btn" id="realityBtn">Reality Mode</button>
+    <button class="mode-btn" id="futureBtn">Future Mode</button>
+  </div>
+
+  <div id="infoPanel">
+    <p id="status">Waiting for camera...</p>
+    <p id="result"></p>
+    <div id="nextPrompt">
+      <p>Analyze next frame?</p>
+      <div>
+        <button id="yesBtn">Yes</button>
+        <button id="noBtn">No</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer id="contact">
+  <p>Made with ❤️ using Gemini API</p>
+  <div>
+    <a href="#"><i class="fab fa-twitter"></i></a>
+    <a href="#"><i class="fab fa-github"></i></a>
+    <a href="#"><i class="fab fa-linkedin"></i></a>
+  </div>
+</footer>
+
+<script>
+/* =========================
+   NAVBAR TOGGLE
+========================= */
+const navToggle = document.getElementById('navToggle');
+const navLinks = document.getElementById('navLinks');
+navToggle.addEventListener('click', () => navLinks.classList.toggle('show'));
+
+
+/* =========================
+   ELEMENTS
+========================= */
+const video = document.getElementById("camera");
+const canvas = document.getElementById("frameCanvas");
+const ctx = canvas.getContext("2d");
+
+const overlay = document.getElementById("overlay");
+const resultText = document.getElementById("result");
+const nextPrompt = document.getElementById("nextPrompt");
+const yesBtn = document.getElementById("yesBtn");
+const noBtn = document.getElementById("noBtn");
+
+/* =========================
+   STATE FLAGS
+========================= */
+let previousFrame = null;
+let stillCounter = 0;
+let isAnalyzing = false;
+let waitingForUser = false;
+let captureEnabled = true;
+let loadingInterval = null;
+
+const STILL_THRESHOLD = 15;
+const STILL_FRAMES = 8;
+
+/* =========================
+   CSRF (DJANGO)
+========================= */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie) {
+        document.cookie.split(';').forEach(cookie => {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        });
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+/* =========================
+   MODE BUTTONS
+========================= */
+let viewMode = "history";
+["historyBtn","realityBtn","futureBtn"].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.addEventListener("click", () => {
+        ["historyBtn","realityBtn","futureBtn"].forEach(i => document.getElementById(i).classList.remove("active"));
+        btn.classList.add("active");
+        viewMode = id.replace("Btn","");
+        overlay.innerText = `Mode: ${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} - Move camera slowly`;
+    });
+});
+
+/* =========================
+   CAMERA ACCESS
+========================= */
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+    video.srcObject = stream;
+
+    // Wait for video to be ready
+    video.onloadedmetadata = () => {
+        video.play();
+        // Initialize previousFrame **after video has width & height**
+        previousFrame = getFrameData();
+        overlay.innerText = `Mode: ${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} - Move camera slowly`;
+        // Start main loop now that video is ready
+        setInterval(checkStillness, 400);
+    };
+})
+.catch(() => {
+    overlay.innerText = "Camera access denied";
+});
+
+/* =========================
+   FRAME UTILITIES
+========================= */
+function captureFrame() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    return canvas.toDataURL("image/jpeg",0.7);
+}
+
+function getFrameData() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video,0,0);
+    return ctx.getImageData(0,0,canvas.width,canvas.height);
+}
+
+function detectMotion(curr, prev) {
+    let diff = 0;
+    for (let i=0;i<curr.data.length;i+=4){
+        diff += Math.abs(curr.data[i]-prev.data[i]);
+    }
+    return diff / curr.data.length;
+}
+
+/* =========================
+   STILLNESS CHECK
+========================= */
+function checkStillness() {
+    if (!captureEnabled || isAnalyzing || waitingForUser) return;
+
+    const current = getFrameData();
+
+    if (!previousFrame) {
+        previousFrame = current;
+        return;
+    }
+
+    const motion = detectMotion(current, previousFrame);
+
+    if (motion < STILL_THRESHOLD) {
+        stillCounter++;
+        overlay.innerText = "Hold still… Analyzing";
+
+        if (stillCounter >= STILL_FRAMES) {
+            analyzeScene();
+            stillCounter = 0;
+        }
+    } else {
+        stillCounter = 0;
+        overlay.innerText = `Mode: ${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} - Move camera slowly`;
+    }
+
+    previousFrame = current;
+}
+
+/* =========================
+   ANALYZE SCENE
+========================= */
+async function analyzeScene() {
+    isAnalyzing = true;
+    captureEnabled = false;
+    waitingForUser = false;
+    resultText.innerText = "";
+
+    // Animated dots
+    let dots = 0;
+    loadingInterval = setInterval(()=>{
+        dots = (dots+1)%4;
+        overlay.innerText = "Analyzing scene"+ ".".repeat(dots);
+    },500);
+
+    const image = captureFrame();
+    const prompt = viewMode;
+
+    try {
+        const response = await fetch("/VisionaryAI/home/",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken": csrftoken
+            },
+            body: JSON.stringify({image,prompt})
+        });
+        const data = await response.json();
+        resultText.innerText = data.result || "No response";
+    } catch(err){
+        resultText.innerText = "Error analyzing scene";
+        console.error(err);
+    }
+
+    clearInterval(loadingInterval);
+    overlay.innerText = "Analysis complete";
+    nextPrompt.style.display = "flex";
+    waitingForUser = true;
+    isAnalyzing = false;
+}
+
+/* =========================
+   YES / NO CONTROLS
+========================= */
+yesBtn.addEventListener("click",()=>{
+    nextPrompt.style.display = "none";
+    waitingForUser = false;
+    captureEnabled = true;
+    stillCounter = 0;
+    overlay.innerText = "Hold camera still to analyze again";
+});
+
+noBtn.addEventListener("click",()=>{
+    nextPrompt.style.display = "none";
+    waitingForUser = false;
+    captureEnabled = false;
+    overlay.innerText = "Analysis stopped. Click a mode to restart.";
+});
+</script>
+
+
+
+
+
+
+</body>
+</html>
