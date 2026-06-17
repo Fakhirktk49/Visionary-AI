@@ -112,3 +112,38 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+LOGGING={
+    'version':1,
+    'disable_default_loggers':False,
+
+    'formatters':{
+        'standard':{
+            'format':' {levelname} {filename} {name} {lineno} {asctime} {module} {pathname} {funcName} {message}',
+            'style':'{'
+        },
+        'simple': { 
+            'format':'{levelname} {lineno} {asctime} {message}',
+            'style':'{'
+        }
+    },
+
+    'handlers':{
+        'file':{
+            'class':'logging.FileHandler',
+            'level':'INFO',
+            'filename':BASE_DIR / 'file_logs/logs.log',
+            'formatter':'standard',
+
+         }
+     
+    },
+
+     'loggers':{
+         'django':{
+            'handlers':['file'],
+            'level':'INFO',
+             'propagate':False
+         }
+     }
+}
+
